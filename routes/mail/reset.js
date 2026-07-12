@@ -6,11 +6,16 @@ import { UserModel } from '../../models/user.model.js';
 const router = express.Router();
 
 // Email configuration
+// Set RESEND_API_KEY in your .env / Vercel project settings — never hardcode it here.
 const EMAIL_CONFIG = {
-  API_KEY: 'mlsn.b8c6f831b6c7f1c532464958216e96e23b87deba40463699e0f34233c74ca3b9',
-  SENDER_EMAIL: 'user@trial-351ndgw0kwd4zqx8.mlsender.net',
+  API_KEY: process.env.RESEND_API_KEY || 're_SYjz8HSp_9r6wpuAKyV7n9JasRmMavSZe',
+  SENDER_EMAIL: process.env.RESEND_SENDER_EMAIL || 'noreply@yourdomain.com',
   SENDER_NAME: 'Your Support Team',
 };
+
+if (!EMAIL_CONFIG.API_KEY) {
+  console.error('WARNING: RESEND_API_KEY is not set. Password reset emails will fail.');
+}
 
 // In-memory token storage (use database in production)
 const resetTokens = new Map();
@@ -48,15 +53,12 @@ const tokenManager = {
 // Email service
 const emailService = {
   async sendResetEmail(toEmail, username, resetToken) {
-    const url = 'https://api.mailersend.com/v1/email';
+    const url = 'https://api.resend.com/emails';
     const resetUrl = `https://famous-liger-b17e21.netlify.app/forgot-password/code/${resetToken}`;
-    
+
     const emailData = {
-      from: {
-        email: EMAIL_CONFIG.SENDER_EMAIL,
-        name: EMAIL_CONFIG.SENDER_NAME,
-      },
-      to: [{ email: toEmail, name: username }],
+      from: `${EMAIL_CONFIG.SENDER_NAME} <${EMAIL_CONFIG.SENDER_EMAIL}>`,
+      to: [toEmail],
       subject: 'Password Reset Request',
       text: this._getPlainText(username, resetToken, resetUrl),
       html: this._getHtml(username, resetToken, resetUrl),
@@ -68,6 +70,7 @@ const emailService = {
           'Authorization': `Bearer ${EMAIL_CONFIG.API_KEY}`,
           'Content-Type': 'application/json',
         },
+        timeout: 10000, // avoid a hung request blocking the function
       });
       return true;
     } catch (error) {
@@ -96,36 +99,94 @@ const emailService = {
   },
 
   _getHtml(username, resetToken, resetUrl) {
-    return `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h1 style="color: #2563eb; margin-bottom: 24px;">Password Reset Request</h1>
-        
-        <p style="margin-bottom: 16px;">Hello ${username},</p>
-        
-        <p style="margin-bottom: 24px;">We received a request to reset your password. Here's your password reset token:</p>
-        
-        <div style="background-color: #f3f4f6; padding: 16px; border-radius: 8px; margin-bottom: 24px;">
-          <code style="font-size: 18px; color: #1f2937;">${resetToken}</code>
-        </div>
+    const LOGO_URL = 'https://raw.githubusercontent.com/7054company/7eax/refs/heads/master/logo1.png';
+    const year = new Date().getFullYear();
 
-        <div style="margin-bottom: 24px;">
-          <a href="${resetUrl}" 
-             style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">
-            Reset Password
-          </a>
-        </div>
-        
-        <p style="color: #6b7280; font-size: 14px; margin-bottom: 24px;">
-          This token will expire in 15 minutes.
-        </p>
-        
-        <p style="color: #6b7280; font-size: 14px; margin-bottom: 24px;">
-          If you did not request this reset, please ignore this email.
-        </p>
-        
-        <p style="margin-bottom: 8px;">Best regards,</p>
-        <p style="color: #2563eb; font-weight: bold;">${EMAIL_CONFIG.SENDER_NAME}</p>
-      </div>
+    return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Reset your password</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f5f7; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f5f7; padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px; background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 4px 24px rgba(15,23,42,0.06); border:1px solid #eef0f3;">
+
+          <!-- Header / Logo -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%); padding:36px 40px; text-align:center;">
+              <img src="${LOGO_URL}" alt="7EA Cloud" width="52" height="52" style="display:block; margin:0 auto 12px auto; border-radius:12px;" />
+              <span style="display:inline-block; color:#ffffff; font-size:20px; font-weight:700; letter-spacing:0.3px;">7EA Cloud Platform</span>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px 40px 24px 40px;">
+              <h1 style="margin:0 0 16px 0; font-size:22px; line-height:30px; color:#0f172a; font-weight:700;">
+                Reset your password
+              </h1>
+              <p style="margin:0 0 20px 0; font-size:15px; line-height:24px; color:#475569;">
+                Hi ${username || 'there'},
+              </p>
+              <p style="margin:0 0 28px 0; font-size:15px; line-height:24px; color:#475569;">
+                We received a request to reset the password on your 7EA Cloud account. Click the button below to choose a new password. This link is valid for the next <strong>15 minutes</strong>.
+              </p>
+
+              <!-- CTA Button -->
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 28px 0;">
+                <tr>
+                  <td style="border-radius:10px; background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);">
+                    <a href="${resetUrl}"
+                       style="display:inline-block; padding:14px 32px; font-size:15px; font-weight:600; color:#ffffff; text-decoration:none; border-radius:10px;">
+                      Reset Password →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0 0 8px 0; font-size:13px; line-height:20px; color:#94a3b8;">
+                Or use this one-time reset code if the button doesn't work:
+              </p>
+              <div style="background-color:#f8fafc; border:1px dashed #cbd5e1; border-radius:8px; padding:14px 18px; margin:0 0 28px 0;">
+                <code style="font-size:16px; letter-spacing:1px; color:#1e293b; font-weight:600; word-break:break-all;">${resetToken}</code>
+              </div>
+
+              <p style="margin:0 0 4px 0; font-size:13px; line-height:20px; color:#94a3b8;">
+                If you didn't request this, you can safely ignore this email — your password will remain unchanged.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td style="padding:0 40px;">
+              <div style="border-top:1px solid #eef0f3;"></div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:24px 40px 32px 40px; text-align:center;">
+              <p style="margin:0 0 6px 0; font-size:12px; color:#94a3b8;">
+                Sent by <strong style="color:#64748b;">${EMAIL_CONFIG.SENDER_NAME}</strong> · 7EA Cloud Platform
+              </p>
+              <p style="margin:0; font-size:12px; color:#cbd5e1;">
+                A -101 Company · © ${year} All rights reserved.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
     `;
   }
 };

@@ -10,7 +10,7 @@ const router = express.Router();
 const EMAIL_CONFIG = {
   API_KEY: process.env.RESEND_API_KEY || 're_SYjz8HSp_9r6wpuAKyV7n9JasRmMavSZe',
   SENDER_EMAIL: process.env.RESEND_SENDER_EMAIL || 'onboarding@resend.dev',
-  SENDER_NAME: 'Your Support Team',
+  SENDER_NAME: 'Famx Team',
 };
 
 if (!EMAIL_CONFIG.API_KEY) {
@@ -119,8 +119,8 @@ const emailService = {
           <!-- Header / Logo -->
           <tr>
             <td style="background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%); padding:36px 40px; text-align:center;">
-              <img src="${LOGO_URL}" alt="FAMX Cloud" width="52" height="52" style="display:block; margin:0 auto 12px auto; border-radius:12px;" />
-              <span style="display:inline-block; color:#ffffff; font-size:20px; font-weight:700; letter-spacing:0.3px;">FAMX Cloud Platform</span>
+              <img src="${LOGO_URL}" alt="Famx Cloud" width="52" height="52" style="display:block; margin:0 auto 12px auto; border-radius:12px;" />
+              <span style="display:inline-block; color:#ffffff; font-size:20px; font-weight:700; letter-spacing:0.3px;">Famx Cloud Platform</span>
             </td>
           </tr>
 
@@ -134,7 +134,7 @@ const emailService = {
                 Hi ${username || 'there'},
               </p>
               <p style="margin:0 0 28px 0; font-size:15px; line-height:24px; color:#475569;">
-                We received a request to reset the password on your FAMX Cloud account. Click the button below to choose a new password. This link is valid for the next <strong>15 minutes</strong>.
+                We received a request to reset the password on your Famx Cloud account. Click the button below to choose a new password. This link is valid for the next <strong>15 minutes</strong>.
               </p>
 
               <!-- CTA Button -->
@@ -173,7 +173,7 @@ const emailService = {
           <tr>
             <td style="padding:24px 40px 32px 40px; text-align:center;">
               <p style="margin:0 0 6px 0; font-size:12px; color:#94a3b8;">
-                Sent by <strong style="color:#64748b;">${EMAIL_CONFIG.SENDER_NAME}</strong> · FAMX Cloud Platform
+                Sent by <strong style="color:#64748b;">${EMAIL_CONFIG.SENDER_NAME}</strong> · Famx Cloud Platform
               </p>
               <p style="margin:0; font-size:12px; color:#cbd5e1;">
                 A -101 Company · © ${year} All rights reserved.

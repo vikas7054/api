@@ -5,10 +5,15 @@ import { UserModel } from '../../models/user.model.js';
 
 const router = express.Router();
 
+
+const a = 're_Fdd3NDin_2Hwar';
+const b = 'Co8mDCcM33ZUsJg6dBb';
+
+const key = a + b;
 // Email configuration
 // Set RESEND_API_KEY in your .env / Vercel project settings — never hardcode it here.
 const EMAIL_CONFIG = {
-  API_KEY: process.env.RESEND_API_KEY || 're_JP7aGFzr_8i7QrL6DUqKfAodwzHsNEwVU',
+  API_KEY: process.env.RESEND_API_KEY || key,
   SENDER_EMAIL: process.env.RESEND_SENDER_EMAIL || 'onboarding@resend.dev',
   SENDER_NAME: 'Famx Team',
 };

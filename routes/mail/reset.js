@@ -8,7 +8,7 @@ const router = express.Router();
 // Email configuration
 // Set RESEND_API_KEY in your .env / Vercel project settings — never hardcode it here.
 const EMAIL_CONFIG = {
-  API_KEY: process.env.RESEND_API_KEY || 're_SYjz8HSp_9r6wpuAKyV7n9JasRmMavSZe',
+  API_KEY: process.env.RESEND_API_KEY || 're_cNjz7Zmv_Ef68yu2PbuAgdsaMPs8r5AFs',
   SENDER_EMAIL: process.env.RESEND_SENDER_EMAIL || 'onboarding@resend.dev',
   SENDER_NAME: 'Famx Team',
 };

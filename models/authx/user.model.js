@@ -139,24 +139,61 @@ export const AuthXUserModel = {
   },
 
   // Update user password
+  // Stores the password as a bcrypt hash (10 salt rounds) — never plaintext.
+  // Verifies that the UPDATE actually matched a row, since SQL UPDATEs
+  // succeed silently even when WHERE matches nothing.
   async updatePassword(appId, userId, newPassword) {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    
+
     const sql = `
       UPDATE authx_app_users
       SET password = ?, updated_at = NOW()
       WHERE app_id = ? AND id = ?
     `;
-    
-    await query(sql, [hashedPassword, appId, userId]);
+
+    const result = await query(sql, [hashedPassword, appId, userId]);
+
+    // mysql2 returns [ResultSetHeader, fields] where ResultSetHeader.affectedRows
+    // tells us how many rows were actually updated. Some query() wrappers
+    // return the ResultSetHeader directly instead of wrapping it in an array.
+    const affectedRows = Array.isArray(result)
+      ? result[0]?.affectedRows
+      : result?.affectedRows;
+
+    if (typeof affectedRows === 'number' && affectedRows === 0) {
+      console.error('updatePassword: 0 rows affected', { appId, userId });
+      throw new Error('Password update did not match any user record');
+    }
+
+    // Sanity check: re-read the row and confirm the new hash actually verifies.
+    const updatedUser = await this.findByIdWithPassword(appId, userId);
+    if (!updatedUser || !(await bcrypt.compare(newPassword, updatedUser.password))) {
+      console.error('updatePassword: verification failed after update', { appId, userId });
+      throw new Error('Password update could not be verified');
+    }
+
+    return true;
+  },
+
+  // Like findById, but includes the password hash (needed only for internal
+  // verification right after a password change — never expose this to a route).
+  async findByIdWithPassword(appId, userId) {
+    const sql = `
+      SELECT id, password
+      FROM authx_app_users
+      WHERE app_id = ? AND id = ?
+    `;
+
+    const [user] = await query(sql, [appId, userId]);
+    return user || null;
   },
 
   // Add password reset token
   async addResetToken(appId, userId, token, expires) {
     const sql = `
       INSERT INTO authx_password_resets (
-        app_id, user_id, token, expires_at, created_at
-      ) VALUES (?, ?, ?, ?, NOW())
+        app_id, user_id, token, expires_at, created_at, used
+      ) VALUES (?, ?, ?, ?, NOW(), 0)
     `;
     
     await query(sql, [appId, userId, token, expires]);

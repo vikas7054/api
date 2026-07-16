@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
 import { AuthXUserModel } from '../../models/authx/user.model.js';
 import { AuthXAppModel } from '../../models/authx/app.model.js';
+import { emailService } from '../../routes/mail/reset.js'; // <-- adjust this path to where reset.js actually lives
 
 
 const router = express.Router({ mergeParams: true });
@@ -163,6 +164,9 @@ router.post('/forgot-password', validateApp, async (req, res) => {
 
     await AuthXUserModel.addResetToken(appId, user.id, resetToken, expires);
 
+    // Send reset email instead of returning the token
+    await emailService.sendResetEmail(user.email, user.username, resetToken);
+
     // Log password reset request
     await AuthXUserModel.updateTracking(appId, user.id, {
       ip: getClientIp(req),
@@ -171,8 +175,7 @@ router.post('/forgot-password', validateApp, async (req, res) => {
     });
 
     res.json({ 
-      message: 'Password reset instructions sent',
-      resetToken // Only for development, remove in production
+      message: 'Password reset instructions sent'
     });
   } catch (error) {
     console.error('Password reset error:', error);

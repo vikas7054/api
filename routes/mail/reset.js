@@ -249,3 +249,5 @@ router.post('/reset', async (req, res) => {
 });
 
 export default router;
+// at the bottom of that reset.js file
+export { emailService };

@@ -10,7 +10,7 @@ const router = express.Router();
 // Never commit real API keys to source control — the fallback below is only a placeholder.
 const EMAIL_CONFIG = {
   API_KEY: process.env.AGENTMAIL_API_KEY || 'am_us_03a76aa21285cafa95c190677565d60a5e78e2c3b66e0d336534c89734254611',
-  INBOX_ID: process.env.AGENTMAIL_INBOX_ID || 'onboarding@agentmail.to',
+  INBOX_ID: process.env.AGENTMAIL_INBOX_ID || 'famx@agentmail.to',
   SENDER_NAME: 'Famx Team',
 };
 

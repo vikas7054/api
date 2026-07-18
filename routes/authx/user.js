@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
 import { AuthXUserModel } from '../../models/authx/user.model.js';
 import { AuthXAppModel } from '../../models/authx/app.model.js';
-import { emailService } from '../../routes/mail/reset.js'; // <-- adjust this path to where reset.js actually lives
+import { emailService } from '../../routes/mail/authreset.js'; // <-- adjust this path to where reset.js actually lives
 
 
 const router = express.Router({ mergeParams: true });

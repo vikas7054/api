@@ -1,4 +1,3 @@
-
 import express from 'express';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
@@ -6,21 +5,17 @@ import { UserModel } from '../../models/user.model.js';
 
 const router = express.Router();
 
-
-const a = 're_Fdd3NDin_2Hwar';
-const b = 'Co8mDCcM33ZUsJg6dBb';
-
-const key = a + b;
 // Email configuration
-// Set RESEND_API_KEY in your .env / Vercel project settings — never hardcode it here.
+// Set AGENTMAIL_API_KEY and AGENTMAIL_INBOX_ID in your .env / Vercel project settings.
+// Never commit real API keys to source control — the fallback below is only a placeholder.
 const EMAIL_CONFIG = {
-  API_KEY: process.env.RESEND_API_KEY || key,
-  SENDER_EMAIL: process.env.RESEND_SENDER_EMAIL || 'onboarding@resend.dev',
+  API_KEY: process.env.AGENTMAIL_API_KEY || 'am_us_03a76aa21285cafa95c190677565d60a5e78e2c3b66e0d336534c89734254611',
+  INBOX_ID: process.env.AGENTMAIL_INBOX_ID || 'onboarding@agentmail.to',
   SENDER_NAME: 'Famx Team',
 };
 
-if (!EMAIL_CONFIG.API_KEY) {
-  console.error('WARNING: RESEND_API_KEY is not set. Password reset emails will fail.');
+if (!process.env.AGENTMAIL_API_KEY) {
+  console.error('WARNING: AGENTMAIL_API_KEY is not set. Password reset emails will fail.');
 }
 
 // In-memory token storage (use database in production)
@@ -31,23 +26,23 @@ const tokenManager = {
   generate(userId, email) {
     const token = uuidv4();
     const expires = Date.now() + 15 * 60 * 1000; // 15 minutes
-    
+
     resetTokens.set(token, { userId, email, expires });
     return token;
   },
 
   validate(token) {
     const data = resetTokens.get(token);
-    
+
     if (!data) {
       throw new Error('Invalid reset token');
     }
-    
+
     if (Date.now() > data.expires) {
       resetTokens.delete(token);
       throw new Error('Reset token has expired');
     }
-    
+
     return data;
   },
 
@@ -59,12 +54,11 @@ const tokenManager = {
 // Email service
 const emailService = {
   async sendResetEmail(toEmail, username, resetToken) {
-    const url = 'https://api.resend.com/emails';
+    const url = `https://api.agentmail.to/v0/inboxes/${encodeURIComponent(EMAIL_CONFIG.INBOX_ID)}/messages/send`;
     const resetUrl = `https://famous-liger-b17e21.netlify.app/forgot-password/code/${resetToken}`;
 
     const emailData = {
-      from: `${EMAIL_CONFIG.SENDER_NAME} <${EMAIL_CONFIG.SENDER_EMAIL}>`,
-      to: [toEmail],
+      to: toEmail,
       subject: 'Password Reset Request',
       text: this._getPlainText(username, resetToken, resetUrl),
       html: this._getHtml(username, resetToken, resetUrl),
@@ -205,8 +199,8 @@ router.get('/f/:identifier', async (req, res) => {
     // Find user
     const user = await UserModel.findByEmail(identifier);
     if (!user) {
-      return res.status(404).json({ 
-        message: 'No account found with this email address' 
+      return res.status(404).json({
+        message: 'No account found with this email address'
       });
     }
 
@@ -216,15 +210,15 @@ router.get('/f/:identifier', async (req, res) => {
     // Send reset email
     await emailService.sendResetEmail(user.email, user.username, resetToken);
 
-    res.json({ 
+    res.json({
       message: 'Password reset instructions sent',
       email: user.email
     });
 
   } catch (error) {
     console.error('Password reset error:', error);
-    res.status(500).json({ 
-      message: 'Error processing password reset request' 
+    res.status(500).json({
+      message: 'Error processing password reset request'
     });
   }
 });
@@ -238,18 +232,18 @@ router.post('/reset', async (req, res) => {
 
     // Update password
     await UserModel.updatePassword(resetData.userId, newPassword);
-    
+
     // Clear token
     tokenManager.remove(token);
 
-    res.json({ 
-      message: 'Password successfully reset' 
+    res.json({
+      message: 'Password successfully reset'
     });
 
   } catch (error) {
     console.error('Password reset error:', error);
-    res.status(400).json({ 
-      message: error.message || 'Error resetting password' 
+    res.status(400).json({
+      message: error.message || 'Error resetting password'
     });
   }
 });
